@@ -1,0 +1,16 @@
+{
+  "name": "javascript-features-benchmark",
+  "version": "1.0.0",
+  "description": "Miscellaneous feature benchmarks.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo TODO"
+  },
+  "author": "Joshua Gross <joshua.gross@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "benchmark": "^2.1.1",
+    "immutable": "^3.8.1",
+    "microtime": "^2.1.1"
+  }
+}
