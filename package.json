@@ -10,6 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "benchmark": "^2.1.1",
+    "fast-haversine": "^1.0.0",
     "immutable": "^3.8.1",
     "microtime": "^2.1.1"
   }

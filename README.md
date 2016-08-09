@@ -60,6 +60,28 @@ large: lookup in dict x 9,186,353 ops/sec ±3.75% (61 runs sampled)
 Fastest is large: lookup in dict
 ```
 
+### Coordinates
+
+When doing many, many comparisons of latlong positions, finding the right balance between
+correctness and speed is important.
+
+I test 4 methods: haversine, equirectangular approximation, equirectangular without sqrt, a euclidian heuristic,
+a euclidean heuristic projected to be closer to haversine, and a euclidean heuristic without sqrt.
+
+The correctness of these methods varies dramatically based on the characteristics of input data: how close are the points,
+how accurate do measurements need to be, how close are you to the poles, etc.
+
+```
+haversine x 1,279,756 ops/sec ±6.45% (59 runs sampled)
+euclidian heuristic - no sqrt x 50,403,497 ops/sec ±7.30% (60 runs sampled)
+euclidian heuristic x 31,181,339 ops/sec ±6.10% (64 runs sampled)
+euclidian to radians heuristic x 31,714,894 ops/sec ±3.55% (68 runs sampled)
+equirectangular approximation x 5,036,474 ops/sec ±5.34% (63 runs sampled)
+equirectangular approximation squared x 6,833,702 ops/sec ±2.00% (71 runs sampled)
+Fastest is euclidian heuristic - no sqrt
+```
+
+
 ## License
 Copyright 2016, Joshua Gross, All Rights Reserved.
 
