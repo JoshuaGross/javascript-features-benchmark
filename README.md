@@ -81,6 +81,18 @@ equirectangular approximation squared x 6,833,702 ops/sec ±2.00% (71 runs sampl
 Fastest is euclidian heuristic - no sqrt
 ```
 
+### Extracting numbers from a string
+```
+3 tokens: regex match x 2,483,887 ops/sec ±24.80% (36 runs sampled)
+3 tokens: slice x 6,957,890 ops/sec ±6.10% (59 runs sampled)
+Fastest is 3 tokens: slice
+```
+
+```
+1 token: regex match x 3,322,778 ops/sec ±20.74% (42 runs sampled)
+1 token: slice x 17,076,080 ops/sec ±7.14% (54 runs sampled)
+Fastest is 1 token: slice
+```
 
 ## License
 Copyright 2016, Joshua Gross, All Rights Reserved.
