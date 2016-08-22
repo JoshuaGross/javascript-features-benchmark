@@ -94,6 +94,47 @@ Fastest is 3 tokens: slice
 Fastest is 1 token: slice
 ```
 
+### Performance hit of running something asynchronously
+
+Basically, I wanted to naively measure the performance hit you take when
+running computations asynchronously. If you need to do something in an async
+way, there's usually nothing around it. However, sometimes you'll have a synchronous
+computation that blocks the main thread for too long and you'll need to split up the work.
+This is the performance hit you'll take to complete your computations:
+
+```
+sync computation x 66,789,038 ops/sec ±7.69% (60 runs sampled)
+setTimeout async computation x 1,309,191 ops/sec ±6.14% (66 runs sampled)
+nextTick async computation x 1,922,815 ops/sec ±6.49% (52 runs sampled)
+Fastest is sync computation
+```
+
+It should be noted that in these tests there's a 1:1 ratio of "computations"
+and "CPU yields". In the 1:1 case, purely synchronous functions will execute
+60-70x faster than the asynchronous functions. If you do more computations before
+yielding, you will see better performance.
+
+### Destructuring
+
+What is the fastest way to destructure an object? ES6 or more traditional object getters?
+
+Unintuitively, ES6 destructuring is fairly slow (Node v6.3.1/V8 5.0.71.57) even compared to the
+very cumbersome ES5 approach:
+
+```
+destructure: ES6 sugar x 16,514,713 ops/sec ±9.28% (65 runs sampled)
+destructure: ES5 cumbersome x 29,495,011 ops/sec ±6.79% (68 runs sampled)
+destructure: ES5 without defaults x 54,165,189 ops/sec ±4.84% (65 runs sampled)
+Fastest is destructure: ES5 without defaults
+```
+
+```
+destructure with failure: ES6 sugar / try/catch x 127,010 ops/sec ±6.84% (59 runs sampled)
+destructure with failure: ES5 with defaults x 19,172,485 ops/sec ±5.84% (70 runs sampled)
+destructure with failure: ES5 try/catch x 127,874 ops/sec ±6.63% (60 runs sampled)
+Fastest is destructure with failure: ES5 with defaults
+```
+
 ## License
 Copyright 2016, Joshua Gross, All Rights Reserved.
 
