@@ -12,6 +12,8 @@
     "benchmark": "^2.1.1",
     "fast-haversine": "^1.0.0",
     "immutable": "^3.8.1",
-    "microtime": "^2.1.1"
+    "lodash": "^4.16.4",
+    "microtime": "^2.1.1",
+    "simplify-js": "^1.2.1"
   }
 }
