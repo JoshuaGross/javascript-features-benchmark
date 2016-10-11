@@ -81,6 +81,15 @@ equirectangular approximation squared x 6,833,702 ops/sec ±2.00% (71 runs sampl
 Fastest is euclidian heuristic - no sqrt
 ```
 
+Addendum - if you need to only test if positions are in a certain region, and don't need to actually get exact
+distances - if you can do something like construct a heatmap - then geohashing may be an option:
+
+```
+geohash x 333,218 ops/sec ±5.21% (70 runs sampled)
+geohash heatmap x 3,800 ops/sec ±5.78% (71 runs sampled)
+geohash heatmap - add to dense heatmap x 6,063 ops/sec ±1.95% (88 runs sampled)
+```
+
 ### Extracting numbers from a string
 ```
 3 tokens: regex match x 2,483,887 ops/sec ±24.80% (36 runs sampled)

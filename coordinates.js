@@ -4,7 +4,9 @@
 
 var Benchmark = require('benchmark');
 var fastHaversine = require('fast-haversine');
-var suite = new Benchmark.Suite;
+var geohash = require('latlon-geohash');
+var uniq = require('lodash/uniq');
+var zipObject = require('lodash/zipObject');
 
 var pos1 = { lat: -34.607814, lon: -58.370301 };
 var pos2 = { lat: -34.607800, lon: -58.370300 };
@@ -73,7 +75,112 @@ function llaDistEquirectangularApproxSquared (coord1, coord2) {
   return x*x + y*y;
 }
 
-suite.add('haversine', function () {
+/**
+ * "heat maps" as objects.
+ * Keep track of the number of points at different levels.
+ */
+function createHeatMap () {
+  return {
+    count: 0,
+    1: {}, // 11.1km
+    2: {}, // 1.1km
+    3: {}, // 110m
+    4: {}, // 11m
+    5: {}, // 1.1m
+    6: {}, // 0.11m
+  };
+}
+function addPointToHeatMap (map, lat, lon, bleed) {
+  bleed = bleed || 1;
+
+  //map = addPointToHeatMapWithPrecision(map, lat, lon, bleed, 6);
+  map = addPointToHeatMapWithPrecision(map, lat, lon, bleed, 5);
+  map = addPointToHeatMapWithPrecision(map, lat, lon, bleed, 4);
+  map = addPointToHeatMapWithPrecision(map, lat, lon, bleed, 3);
+  map = addPointToHeatMapWithPrecision(map, lat, lon, bleed, 2);
+  map = addPointToHeatMapWithPrecision(map, lat, lon, bleed, 1);
+
+  map.count++;
+
+  return map;
+}
+function addPointToHeatMapWithPrecision (map, lat, lon, bleed, precision) {
+  const fudge = Math.pow(0.1, precision);
+
+  const keys = [
+    [lat, lon, 1],
+    [lat + fudge, lon, 0.5],
+    [lat - fudge, lon, 0.5],
+    [lat, lon + fudge, 0.5],
+    [lat, lon - fudge, 0.5],
+    [lat + fudge, lon - fudge, 0.25],
+    [lat - fudge, lon - fudge, 0.25],
+    [lat + fudge, lon + fudge, 0.25],
+    [lat - fudge, lon + fudge, 0.25],
+    [lat + fudge, lon - fudge, 0.25],
+    [lat - fudge, lon - fudge, 0.25]
+  ].map(function (p) {
+    return [p[0].toFixed(precision), p[1].toFixed(precision), p[2]];
+  });
+
+  keys.forEach(function (keyAry) {
+    const lat = keyAry[0];
+    const lon = keyAry[1];
+    const weight = keyAry[2];
+    const key = lat + ',' + lon;
+
+    map[precision][key] = (map[precision][key] || 0) + weight;
+  });
+
+  return map;
+}
+
+/**
+ * Add a geohash (12 precision) to a heatmap.
+ */
+function addGeohashToHeatmap (map, hash) {
+  map.count++;
+
+  let hashWeightObj = {};
+  hashWeightObj[hash] = 1;
+
+  const neighbors = geohash.neighbours(hash);
+  const neighborKeys = Object.keys(neighbors);
+  let weights = Object.assign(zipObject(neighborKeys.map(function (k) {
+    return neighbors[k];
+  }), neighborKeys.map(function (k) {
+    return 0.5 / k.length;
+  })), hashWeightObj);
+
+  while (Object.keys(weights).length > 0) {
+    Object.keys(weights).forEach(function (k) {
+      map[k] = (map[k] || 0) + weights[k];
+    });
+
+    const oldWeights = weights;
+    weights = Object.keys(weights).reduce(function (prev, key) {
+      const newKey = key.slice(0, -1);
+
+      if (newKey === '' || prev[newKey]) {
+        return prev;
+      }
+
+      prev[newKey] = oldWeights[key];
+      return prev;
+    }, {});
+  }
+
+  return map;
+}
+
+const denseHeatmap = { count: 0 };
+for (let i = 0; i < 10000; i++) {
+  addGeohashToHeatmap(denseHeatmap,
+                      geohash.encode(pos1.lat + Math.random() * 0.000006,
+                                     pos1.lon + Math.random() * 0.000006, 12));
+}
+
+(new Benchmark.Suite()).add('haversine', function () {
   fastHaversine(pos1, pos2);
   fastHaversine(pos1, pos3);
   fastHaversine(pos1, pos4);
@@ -115,6 +222,52 @@ suite.add('haversine', function () {
   llaDistEquirectangularApproxSquared(pos2, pos3);
   llaDistEquirectangularApproxSquared(pos2, pos4);
   llaDistEquirectangularApproxSquared(pos3, pos4);
+}).on('cycle', function (event) {
+  console.log(String(event.target));
+}).on('complete', function () {
+  console.log('Fastest is ' + this.filter('fastest').map('name'));
+}).run({ async: false });
+
+(new Benchmark.Suite()).add('geohash', function () {
+  geohash.encode(pos1.lat, pos1.lon, 12);
+  geohash.encode(pos2.lat, pos2.lon, 12);
+  geohash.encode(pos3.lat, pos3.lon, 12);
+  geohash.encode(pos4.lat, pos4.lon, 12);
+}).on('cycle', function (event) {
+  console.log(String(event.target));
+}).on('complete', function () {
+  console.log('Fastest is ' + this.filter('fastest').map('name'));
+}).run({ async: false });
+
+(new Benchmark.Suite()).add('geohash heatmap', function () {
+  const heatmap = { count: 0 };
+  addGeohashToHeatmap(heatmap, geohash.encode(pos1.lat, pos1.lon, 12));
+  addGeohashToHeatmap(heatmap, geohash.encode(pos2.lat, pos2.lon, 12));
+  addGeohashToHeatmap(heatmap, geohash.encode(pos3.lat, pos3.lon, 12));
+  addGeohashToHeatmap(heatmap, geohash.encode(pos4.lat, pos4.lon, 12));
+}).on('cycle', function (event) {
+  console.log(String(event.target));
+}).on('complete', function () {
+  console.log('Fastest is ' + this.filter('fastest').map('name'));
+}).run({ async: false });
+
+(new Benchmark.Suite()).add('geohash heatmap - add to dense heatmap', function () {
+  addGeohashToHeatmap(denseHeatmap, geohash.encode(pos1.lat, pos1.lon, 12));
+  addGeohashToHeatmap(denseHeatmap, geohash.encode(pos2.lat, pos2.lon, 12));
+  addGeohashToHeatmap(denseHeatmap, geohash.encode(pos3.lat, pos3.lon, 12));
+  addGeohashToHeatmap(denseHeatmap, geohash.encode(pos4.lat, pos4.lon, 12));
+}).on('cycle', function (event) {
+  console.log(String(event.target));
+}).on('complete', function () {
+  console.log('Fastest is ' + this.filter('fastest').map('name'));
+}).run({ async: false });
+
+(new Benchmark.Suite()).add('heatmap', function () {
+  const heatmap = createHeatMap();
+  addPointToHeatMap(heatmap, pos1.lat, pos1.lon);
+  addPointToHeatMap(heatmap, pos2.lat, pos2.lon);
+  addPointToHeatMap(heatmap, pos3.lat, pos3.lon);
+  addPointToHeatMap(heatmap, pos4.lat, pos4.lon);
 }).on('cycle', function (event) {
   console.log(String(event.target));
 }).on('complete', function () {
