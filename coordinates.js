@@ -141,9 +141,12 @@ function addPointToHeatMapWithPrecision (map, lat, lon, bleed, precision) {
 function addGeohashToHeatmap (map, hash) {
   map.count++;
 
+  const now = Date.now();
+
   let hashWeightObj = {};
   hashWeightObj[hash] = 1;
 
+  // Add gradient of neighbors to hash weight object
   const neighbors = geohash.neighbours(hash);
   const neighborKeys = Object.keys(neighbors);
   let weights = Object.assign(zipObject(neighborKeys.map(function (k) {
@@ -154,7 +157,11 @@ function addGeohashToHeatmap (map, hash) {
 
   while (Object.keys(weights).length > 0) {
     Object.keys(weights).forEach(function (k) {
-      map[k] = (map[k] || 0) + weights[k];
+      const mapIdx = map[k] || {};
+      Object.assign(mapIdx, {
+        weight: (mapIdx.weight || 0) + weights[k],
+        updated: now
+      });
     });
 
     const oldWeights = weights;
