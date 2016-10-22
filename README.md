@@ -144,6 +144,9 @@ destructure with failure: ES5 try/catch x 127,874 ops/sec ±6.63% (60 runs sampl
 Fastest is destructure with failure: ES5 with defaults
 ```
 
+### Fork
+On my system I could run fork about 14 times a second; it took around 70ms to spin up another node process.
+
 ## License
 Copyright 2016, Joshua Gross, All Rights Reserved.
 
