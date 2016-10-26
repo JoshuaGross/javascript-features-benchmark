@@ -147,6 +147,15 @@ Fastest is destructure with failure: ES5 with defaults
 ### Fork
 On my system I could run fork about 14 times a second; it took around 70ms to spin up another node process.
 
+### Recursion
+Recursion in JavaScript is _really_ slow. Beware.
+
+```
+recursion x 86,446 ops/sec ±6.27% (78 runs sampled)
+iteration x 1,390,141 ops/sec ±1.77% (86 runs sampled)
+Fastest is iteration
+```
+
 ## License
 Copyright 2016, Joshua Gross, All Rights Reserved.
 
